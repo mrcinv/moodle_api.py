@@ -19,3 +19,21 @@ Consult `Site administration -> Plugins -> Web services -> API Documentation` fo
 >>> course5[0].keys()
 dict_keys(['id', 'summary', 'name', 'visible', 'summaryformat', 'modules'])
 ```
+## Course list
+Class `CourseList` handles listing of all courses. Once initialized, you can get courses by `id` and `ìdnumber`.
+
+```python
+>>> courses = moodle_api.CourseList()
+>>> courses.by_id[5]
+{'categoryid': 9,
+ 'categorysortorder': 170009,
+ 'completionnotify': 0,
+ 'courseformatoptions': [{'name': 'numsections', 'value': 17},
+  ...
+>>> courses.by_idnumber['1234']
+{'categoryid': 9,
+ 'categorysortorder': 170009,
+ 'completionnotify': 0,
+ 'courseformatoptions': [{'name': 'numsections', 'value': 17},
+  ...
+```
