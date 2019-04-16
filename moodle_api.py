@@ -39,7 +39,8 @@ def call(fname, **kwargs):
     """
     parameters = rest_api_parameters(kwargs)
     parameters.update({"wstoken": KEY, 'moodlewsrestformat': 'json', "wsfunction": fname})
-    response = post(URL+ENDPOINT, parameters).json()
+    response = post(URL+ENDPOINT, parameters)
+    response = response.json()
     if type(response) == dict and response.get('exception'):
         raise SystemError("Error calling Moodle API\n", response)
     return response
@@ -90,28 +91,82 @@ class Course():
     def __init__(self, **data):
         self.__dict__.update(data)
         
-    def create():
+    def create(self):
         "Create this course on moodle"
         res = call('core_course_create_courses', courses = [self.__dict__])
         if type(res) == list:
             self.id = res[0].get('id')
     
-    def update():
+    def update(self):
         "Update course"
         r = call('core_course_update_courses', courses = [self.__dict__])
     
-    def i18n_set(self, **data):
-        "Transform given field to multilang string with <span class=\"multilang\""
-        template =  "<span class=\"multilang\" lang=\"{}\">{}</span>"
-        for field in data:
-            value = data[field]
-            new_value = ""
-            if type(value) == dict:
-                if len(value) == 1:
-                    for lang in value:
-                        new_value += value[lang]
-                else:
-                    for lang in value:
-                        if value[lang]:
-                            new_value += template.format(lang, value[lang])
-                self.__dict__[field] = new_value
+    
+class User():
+    """Class for a single user.
+    
+    Example:
+    >>> User(name="Janez", surname="Novak", email="janez.novak@student.si", username="jnovak", password="sila varno geslo")"""
+    
+    def __init__(self, **data):
+        self.__dict__.update(data)
+    
+    def create(self):
+        "Create new user on moodle site"
+        valid_keys = ['username', 
+                      'firstname', 
+                      'lastname', 
+                      'email', 
+                      'auth',
+                      'idnumber',
+                      'password']
+        values = {key: self.__dict__[key] for key in valid_keys}
+        res = call('core_user_create_users', users = [values])
+        if type(res) == list:
+            self.id  = res[0].get('id')
+            
+    def update(self, field=None):
+        "Upadte user data on moodle site"
+        if field:
+            values = {"id": self.id, field: self.__dict__[field]}
+        else:
+            values = self.__dict__
+        r = call('core_user_update_users', users = [values])
+    
+    def get_by_field(self, field='username'):
+        "Create new user if it does not exist, otherwise update data"
+        res = call('core_user_get_users_by_field', field = field, values = [self.__dict__[field]])
+        if (type(res) == list) and len(res) > 0:
+            self.__dict__.update(res[0])
+            return self
+        else:
+            return None
+    def create_or_get_id(self):
+        "Get Moodle id of the user or create one if it does not exists."
+        if not self.get_by_field():
+            self.create()
+
+    def enroll(self, roleid=5):
+        "Enroll users in courses with specific role"
+        if len(self.courses)<=0:
+            return None
+        enrolments = []
+        for course in self.courses:
+            enrolments.append({'roleid': roleid, 'userid': self.id, 'courseid': course.id})
+        r = call('enrol_manual_enrol_users', enrolments = enrolments)
+        return r
+
+    def enrolments(self, m_courses):
+        "Get moodle courses, the user has to enroll"
+        self.courses = []
+        for idnumber in self.course_idnumbers:
+            course = m_courses.by_idnumber(idnumber)
+            if course:
+                self.courses.append(course)
+        return self.courses
+                
+class Cathegory():
+    pass
+
+class Enrolments():
+    pass
