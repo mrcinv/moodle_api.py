@@ -156,6 +156,24 @@ class User():
             enrolments.append({'roleid': roleid, 'userid': self.id, 'courseid': course.id})
         r = call('enrol_manual_enrol_users', enrolments = enrolments)
         return r
+    
+    def enroll_to_course(self,courseid:int,timestart:int=None,duration_days:int=None,timeend:int=None, roleid:int=5) -> dict:
+        "Enroll user in a course with specific role and can set the enrollment start datetime and end datetime"
+        
+        "Default data: If user did not send any parameter other than courseid"
+        data = {'roleid': roleid, 'userid': self.id, 'courseid': courseid }
+        
+        if timestart:
+            data['timestart'] = timestart
+        if timeend:
+            data['timeend'] = timeend
+        if duration_days:
+            data['timeend'] = User.add_days_to_epoch(timestart,duration_days)
+            
+        enrolments = []
+        enrolments.append(data)
+        r = call('enrol_manual_enrol_users', enrolments = enrolments)
+        return r
 
     def enrolments(self, m_courses):
         "Get moodle courses, the user has to enroll"
@@ -165,6 +183,13 @@ class User():
             if course:
                 self.courses.append(course)
         return self.courses
+    
+    @staticmethod
+    def add_days_to_epoch(current_epoch_time:int, n_days:int) -> int:
+        # Calculate the new epoch time by adding n days (in seconds)
+        n_days_in_seconds = n_days * 24 * 60 * 60  # 1 day = 24 hours * 60 minutes * 60 seconds
+        new_epoch_time = current_epoch_time + n_days_in_seconds
+        return new_epoch_time
                 
 class Cathegory():
     pass
