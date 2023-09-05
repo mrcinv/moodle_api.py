@@ -145,6 +145,7 @@ class User():
         "Get Moodle id of the user or create one if it does not exists."
         if not self.get_by_field():
             self.create()
+        return self
 
     def enroll(self, roleid=5):
         "Enroll users in courses with specific role"
